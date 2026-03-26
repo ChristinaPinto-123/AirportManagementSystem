@@ -1,0 +1,53 @@
+create table airport(IATA_Code char(3), city varchar(50), country varchar(50), Airport_Name varchar(120));
+alter table airport add constraint pk primary key (IATA_Code);
+
+create table employee(emp_id number(3), Salary decimal(8,2), Designation varchar(50), Lname varchar(70), Fname varchar(70), Pincode number (6), Street_Name varchar(120), IATA_Code char(3) references airport(IATA_Code));
+alter table employee add constraint prik primary key(emp_id);
+
+create table airline(airline_id number(2) primary key, Headquaters varchar(90), Airline_Name varchar(150));
+
+CREATE TABLE Flights (
+    flight_no            VARCHAR2(9) PRIMARY KEY,
+    arrival_time         DATE, 
+    departure_time       DATE, 
+    status               VARCHAR2(30), 
+    Departing_to         VARCHAR2(80), 
+    Arrivaling_from      VARCHAR2(80), 
+    Gate_No              NUMBER(3), 
+    Baggage_Carousel_No  NUMBER(2), 
+    Airline_ID           NUMBER(2) REFERENCES airline(airline_ID), 
+    Dept_IATA_Code       CHAR(3)   REFERENCES airport(IATA_Code), 
+    Arr_IATA_Code        CHAR(3)   REFERENCES airport(IATA_Code)
+);
+
+create table contains(
+IATA_Code char(3) references airport(IATA_Code),
+Airline_id number(2) references airline(airline_id)
+);
+
+ create table passengers(
+ passport_no varchar(9),
+ address varchar(80),
+ Fname varchar(15),
+ Minit char(1),
+ Lname varchar(15),
+ Sex char(1),
+ DOB date,
+ flight_no varchar(9) references flights(flight_no)
+ );
+
+ alter table passengers add constraint pkf primary key (passport_no);
+
+create table tickets(
+pnr number(10) primary key,
+price decimal(7,2),
+airline_name varchar(80),
+seat_no varchar(4),
+class varchar(35),
+arrival_time date,
+departure_time date,
+arriving_from varchar(80),
+departing_to varchar(80),
+Flight_date date,
+Passport_No varchar(9) references passengers(passport_no)
+);

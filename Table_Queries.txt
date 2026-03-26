@@ -1,0 +1,133 @@
+INSERT INTO airport VALUES ('DXB', 'Dubai', 'UAE', 'Dubai International Airport');
+INSERT INTO airport VALUES ('LHR', 'London', 'UK', 'Heathrow Airport');
+INSERT INTO airport VALUES ('JFK', 'New York', 'USA', 'John F. Kennedy International');
+INSERT INTO airport VALUES ('DEL', 'New Delhi', 'India', 'Indira Gandhi International Airport');
+INSERT INTO airport VALUES ('CDG', 'Paris', 'France', 'Charles de Gaulle Airport');
+INSERT INTO airport VALUES ('BOM', 'Mumbai', 'India', 'Chhatrapati Shivaji Airport');
+
+INSERT INTO airline VALUES (10, 'Dubai', 'Emirates');
+INSERT INTO airline VALUES (20, 'London', 'British Airways');
+INSERT INTO airline VALUES (30, 'Gurgaon', 'IndiGo');
+INSERT INTO airline VALUES (40, 'New Delhi', 'Air India');
+INSERT INTO airline VALUES (50, 'Paris', 'Air France');
+
+INSERT INTO employee VALUES (
+    107, 85000.00, 'Senior Manager', 'Malhotra', 'Vikram', 
+    110021, 'Shanti Path', 'DEL'
+);
+INSERT INTO employee VALUES (
+    108, 3200.50, 'Ground Staff', 'Taylor', 'James', 
+    221100, 'Terminal 2 Way', 'LHR'
+);
+INSERT INTO employee VALUES (
+    109, 5800.00, 'Logistics Officer', 'Al-Maktoum', 'Zayed', 
+    000000, 'Cargo Village', 'DXB'
+);
+INSERT INTO employee VALUES (
+    111, 3800.00, 'Ground Crew', 'Davies', 'Jack', 
+    441122, 'Heathrow Terminal 4', 'LHR'
+);
+
+INSERT INTO Flights VALUES (
+    'AI101', 
+    TO_DATE('2026-03-27 18:30', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-03-27 13:00', 'YYYY-MM-DD HH24:MI'), 
+    'On Time', 'London', 'Delhi', 02, 05, 40, 'DEL', 'LHR'
+);
+
+INSERT INTO Flights VALUES (
+    '6E52', 
+    TO_DATE('2026-03-27 22:00', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-03-27 19:30', 'YYYY-MM-DD HH24:MI'), 
+    'Scheduled', 'Dubai', 'Delhi', 14, 02, 30, 'DEL', 'DXB'
+);
+
+INSERT INTO Flights VALUES (
+    'BA175', 
+    TO_DATE('2026-03-30 12:00', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-03-30 09:15', 'YYYY-MM-DD HH24:MI'), 
+    'On Time', 'New York', 'London', 05, 01, 20, 'LHR', 'JFK'
+);
+
+INSERT INTO Flights VALUES (
+    'EK073', 
+    TO_DATE('2026-03-31 13:30', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-03-31 08:20', 'YYYY-MM-DD HH24:MI'), 
+    'Scheduled', 'Paris', 'Dubai', 19, 04, 10, 'DXB', 'CDG'
+);
+
+INSERT INTO Flights VALUES (
+    '6E5302', 
+    TO_DATE('2026-04-01 10:00', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-04-01 07:45', 'YYYY-MM-DD HH24:MI'), 
+    'On Time', 'Mumbai', 'Delhi', 01, 01, 30, 'DEL', 'BOM'
+);
+
+INSERT INTO Flights VALUES (
+    'AF007', 
+    TO_DATE('2026-03-28 15:45', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-03-28 13:10', 'YYYY-MM-DD HH24:MI'), 
+    'Delayed', 'New York', 'Paris', 22, 09, 50, 'CDG', 'JFK'
+);
+
+INSERT INTO contains VALUES ('DEL', 30);
+INSERT INTO contains VALUES ('DXB', 30);
+INSERT INTO contains VALUES ('DEL', 40);
+INSERT INTO contains VALUES ('LHR', 40);
+INSERT INTO contains VALUES ('LHR', 20);
+INSERT INTO contains VALUES ('DXB', 10);
+INSERT INTO contains VALUES ('CDG', 50);
+
+INSERT INTO passengers VALUES (
+    'A9876543', 'Sector 21, Noida, India', 'Amit', 'K', 'Sharma', 'M', 
+    TO_DATE('1992-05-15', 'YYYY-MM-DD'), '6E52'
+);
+
+INSERT INTO passengers VALUES (
+    'B1234567', 'Park Street, Kolkata, India', 'Sneha', 'R', 'Gupta', 'F', 
+    TO_DATE('1988-11-20', 'YYYY-MM-DD'), 'AI101'
+);
+
+INSERT INTO passengers VALUES (
+    'D0011223', 'Rue de Rivoli, Paris, France', 'Marie', 'L', 'Curie', 'F', 
+    TO_DATE('1995-02-28', 'YYYY-MM-DD'), 'AF007'
+);
+
+INSERT INTO passengers VALUES (
+    'C5566778', 'Baker Street, London, UK', 'John', 'H', 'Watson', 'M', 
+    TO_DATE('1975-07-07', 'YYYY-MM-DD'), 'EK073'
+);
+
+INSERT INTO passenger_phoneno VALUES ('A9876543', 9810012345);
+INSERT INTO passenger_phoneno VALUES ('A9876543', 9910054321);
+INSERT INTO passenger_phoneno VALUES ('B1234567', 9871122334);
+INSERT INTO passenger_phoneno VALUES ('C5566778', 0712345678);
+INSERT INTO passenger_phoneno VALUES ('D0011223', 8976542341);
+
+INSERT INTO tickets VALUES (
+    1000000001, 12500.50, 'IndiGo', '12F', 'Economy', 
+    TO_DATE('2026-03-27 22:00', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-03-27 19:30', 'YYYY-MM-DD HH24:MI'), 
+    'Delhi', 'Dubai', TO_DATE('2026-03-27', 'YYYY-MM-DD'), 'A9876543'
+);
+
+INSERT INTO tickets VALUES (
+    1000000002, 45000.00, 'Air India', '02B', 'Business', 
+    TO_DATE('2026-03-27 18:30', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-03-27 13:00', 'YYYY-MM-DD HH24:MI'), 
+    'Delhi', 'London', TO_DATE('2026-03-27', 'YYYY-MM-DD'), 'B1234567'
+);
+
+INSERT INTO tickets VALUES (
+    1000000003, 32000.75, 'British Airways', '10A', 'Economy', 
+    TO_DATE('2026-03-29 05:00', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-03-28 20:15', 'YYYY-MM-DD HH24:MI'), 
+    'London', 'Delhi', TO_DATE('2026-03-28', 'YYYY-MM-DD'), 'C5566778'
+);
+
+INSERT INTO tickets VALUES (
+    1000000004, 750.00, 'Air France', '01A', 'First Class', 
+    TO_DATE('2026-03-28 15:45', 'YYYY-MM-DD HH24:MI'), 
+    TO_DATE('2026-03-28 13:10', 'YYYY-MM-DD HH24:MI'), 
+    'Paris', 'New York', TO_DATE('2026-03-28', 'YYYY-MM-DD'), 'D0011223'
+);
