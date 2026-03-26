@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AERO TRACKER | TICKETS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* 1. FONTS */
+        body { 
+            background-color: #617891; 
+            font-family: Arial, sans-serif; 
+        }
+
+        /* Impact for Brand and Page Titles */
+        h2, .sidebar-header, .modal-title {
+            font-family: 'Impact', 'Charcoal', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* GEORGIA for Table Headings */
+        .table thead th {
+            font-family: 'Georgia', serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background-color: #1d2b46 !important;
+            color: white !important;
+        }
+
+        /* Courier New for Database Data */
+        .table tbody td, .form-control, .badge {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+        }
+
+        /* 2. LAYOUT */
+        .sidebar { 
+            height: 100vh; width: 250px; position: fixed; 
+            background: #1d2b46; padding-top: 20px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-header {
+            color: #ffffff; font-size: 1.8rem; text-align: center;
+            padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar a { 
+            padding: 15px; text-decoration: none; color: #cbd5e0; 
+            display: block; transition: 0.3s; font-family: 'Impact', sans-serif;
+        }
+
+        .sidebar a:hover { background: #34495e; color: white; padding-left: 25px; }
+        .sidebar .active { background: #648ac3; color: white; }
+
+        .content { margin-left: 260px; padding: 40px; }
+        .card { border: none; border-radius: 15px; background: white; overflow: hidden; }
+
+        /* Ticket Class Badges */
+        .class-badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar shadow">
+    <div class="sidebar-header">🌐 AERO TRACKER</div>
+    <a href="index.html">PASSENGERS</a>
+    <a href="flights.html">FLIGHTS</a>
+    <a href="employee.html">EMPLOYEES</a>
+    <a href="tickets.html" class="active">TICKETS</a>
+</div>
+
+<div class="content">
+    <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+        <h2 style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">Ticket Inventory</h2>
+        <div>
+            <button class="btn btn-dark" onclick="loadTickets()">Refresh List</button>
+            <button class="btn btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#ticketModal" onclick="prepareAdd()">+ Issue Ticket</button>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>PNR</th>
+                        <th>Seat</th>
+                        <th>Class</th>
+                        <th>Price</th>
+                        <th>Passport</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tTable">
+                    <tr><td colspan="6" class="text-center py-4 text-dark">Retrieving Oracle Ticket Data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ticketModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Ticket Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="fw-bold">PNR Number</label><input type="number" id="t_pnr" class="form-control"></div>
+                <div class="row">
+                    <div class="col-6 mb-3"><label class="fw-bold">Seat No</label><input type="text" id="t_seat" class="form-control" placeholder="12A"></div>
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold">Class</label>
+                        <select id="t_class" class="form-select">
+                            <option value="Economy">Economy</option>
+                            <option value="Business">Business</option>
+                            <option value="First Class">First Class</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3"><label class="fw-bold">Price ($)</label><input type="number" step="0.01" id="t_price" class="form-control"></div>
+                    <div class="col-6 mb-3"><label class="fw-bold">Passport Ref</label><input type="text" id="t_pass" class="form-control"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary w-100" onclick="saveTicket()">Save Ticket</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let isEditMode = false;
+
+    // 1. FETCH TICKETS
+    async function loadTickets() {
+        const tbody = document.getElementById('tTable');
+        try {
+            const res = await fetch('/api/tickets');
+            const data = await res.json();
+            tbody.innerHTML = '';
+            
+            data.forEach(t => {
+                // Color code the class badges
+                let classColor = 'bg-secondary';
+                if(t.CLASS === 'Business') classColor = 'bg-info';
+                if(t.CLASS === 'First Class') classColor = 'bg-primary';
+
+                tbody.innerHTML += `
+                    <tr class="align-middle">
+                        <td class="fw-bold text-dark">${t.PNR}</td>
+                        <td>${t.SEAT_NO}</td>
+                        <td><span class="class-badge ${classColor}">${t.CLASS}</span></td>
+                        <td>$${parseFloat(t.PRICE).toFixed(2)}</td>
+                        <td>${t.PASSPORT_NO}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="prepareEdit('${t.PNR}', '${t.SEAT_NO}', '${t.CLASS}', '${t.PRICE}', '${t.PASSPORT_NO}')">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteEntry('${t.PNR}')">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Database Link Failure</td></tr>`;
+        }
+    }
+
+    function prepareAdd() {
+        isEditMode = false;
+        document.getElementById('modalTitle').innerText = "Issue New Ticket";
+        document.getElementById('t_pnr').disabled = false;
+        clearForm();
+    }
+
+    function prepareEdit(pnr, seat, cls, price, pass) {
+        isEditMode = true;
+        document.getElementById('modalTitle').innerText = "Update Ticket PNR: " + pnr;
+        document.getElementById('t_pnr').value = pnr;
+        document.getElementById('t_pnr').disabled = true;
+        document.getElementById('t_seat').value = seat;
+        document.getElementById('t_class').value = cls;
+        document.getElementById('t_price').value = price;
+        document.getElementById('t_pass').value = pass;
+        new bootstrap.Modal(document.getElementById('ticketModal')).show();
+    }
+
+    async function saveTicket() {
+        const payload = {
+            table: 'tickets',
+            data: {
+                seat_no: document.getElementById('t_seat').value,
+                class: document.getElementById('t_class').value,
+                price: document.getElementById('t_price').value,
+                passport_no: document.getElementById('t_pass').value
+            }
+        };
+
+        const url = isEditMode ? '/api/update' : '/api/add';
+        const method = isEditMode ? 'PUT' : 'POST';
+        
+        if (isEditMode) {
+            payload.idColumn = 'pnr';
+            payload.idValue = document.getElementById('t_pnr').value;
+        } else {
+            payload.data.pnr = document.getElementById('t_pnr').value;
+        }
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            location.reload();
+        } else {
+            alert("Oracle Database rejected the ticket update.");
+        }
+    }
+
+    async function deleteEntry(id) {
+        if (confirm(`Cancel Ticket PNR #${id}?`)) {
+            await fetch(`/api/delete/tickets/pnr/${id}`, { method: 'DELETE' });
+            loadTickets();
+        }
+    }
+
+    function clearForm() {
+        document.getElementById('t_pnr').value = '';
+        document.getElementById('t_seat').value = '';
+        document.getElementById('t_class').value = 'Economy';
+        document.getElementById('t_price').value = '';
+        document.getElementById('t_pass').value = '';
+    }
+
+    window.onload = loadTickets;
+</script>
+</body>
+</html>

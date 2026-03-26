@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AERO TRACKER | EMPLOYEES</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* 1. FONTS */
+        body { 
+            background-color: #617891; 
+            font-family: Arial, sans-serif; 
+        }
+
+        /* Impact for Brand and Page Titles */
+        h2, .sidebar-header, .modal-title {
+            font-family: 'Impact', 'Charcoal', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* GEORGIA for Table Headings */
+        .table thead th {
+            font-family: 'Georgia', serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background-color: #1d2b46 !important;
+            color: white !important;
+        }
+
+        /* Courier New for Database Data */
+        .table tbody td, .form-control, .badge {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+        }
+
+        /* 2. LAYOUT */
+        .sidebar { 
+            height: 100vh; width: 250px; position: fixed; 
+            background: #1d2b46; padding-top: 20px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-header {
+            color: #ffffff; font-size: 1.8rem; text-align: center;
+            padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar a { 
+            padding: 15px; text-decoration: none; color: #cbd5e0; 
+            display: block; transition: 0.3s; font-family: 'Impact', sans-serif;
+        }
+
+        .sidebar a:hover { background: #34495e; color: white; padding-left: 25px; }
+        .sidebar .active { background: #648ac3; color: white; }
+
+        .content { margin-left: 260px; padding: 40px; }
+        .card { border: none; border-radius: 15px; background: white; overflow: hidden; }
+
+        /* Designation Badge */
+        .staff-badge {
+            background-color: #6f4d38;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar shadow">
+    <div class="sidebar-header">🌐 AERO TRACKER</div>
+    <a href="index.html">PASSENGERS</a>
+    <a href="flights.html">FLIGHTS</a>
+    <a href="employee.html" class="active">EMPLOYEES</a>
+    <a href="tickets.html">TICKETS</a>
+</div>
+
+<div class="content">
+    <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+        <h2 style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">Staff Directory</h2>
+        <div>
+            <button class="btn btn-dark" onclick="loadEmployees()">Refresh List</button>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#empModal" onclick="prepareAdd()">+ Add Staff</button>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Full Name</th>
+                        <th>Designation</th>
+                        <th>Airport (IATA)</th>
+                        <th>Salary</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="eTable">
+                    <tr><td colspan="6" class="text-center py-4 text-dark">Accessing Employee Records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="empModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Employee Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="fw-bold">Employee ID</label><input type="number" id="e_id" class="form-control"></div>
+                <div class="row">
+                    <div class="col-6 mb-3"><label class="fw-bold">First Name</label><input type="text" id="e_fn" class="form-control"></div>
+                    <div class="col-6 mb-3"><label class="fw-bold">Last Name</label><input type="text" id="e_ln" class="form-control"></div>
+                </div>
+                <div class="mb-3"><label class="fw-bold">Designation</label><input type="text" id="e_des" class="form-control"></div>
+                <div class="row">
+                    <div class="col-6 mb-3"><label class="fw-bold">Airport Code</label><input type="text" id="e_iata" class="form-control" maxlength="3"></div>
+                    <div class="col-6 mb-3"><label class="fw-bold">Salary ($)</label><input type="number" step="0.01" id="e_sal" class="form-control"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary w-100" onclick="saveEmployee()">Save Record</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let isEditMode = false;
+
+    // 1. FETCH EMPLOYEES
+    async function loadEmployees() {
+        const tbody = document.getElementById('eTable');
+        try {
+            const res = await fetch('/api/employees');
+            const data = await res.json();
+            tbody.innerHTML = '';
+            
+            data.forEach(e => {
+                tbody.innerHTML += `
+                    <tr class="align-middle">
+                        <td class="fw-bold">#${e.EMP_ID}</td>
+                        <td>${e.FNAME} ${e.LNAME}</td>
+                        <td><span class="staff-badge">${e.DESIGNATION}</span></td>
+                        <td>${e.IATA_CODE}</td>
+                        <td>$${parseFloat(e.SALARY).toLocaleString()}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="prepareEdit('${e.EMP_ID}', '${e.FNAME}', '${e.LNAME}', '${e.DESIGNATION}', '${e.IATA_CODE}', '${e.SALARY}')">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteEntry('${e.EMP_ID}')">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Database Connection Lost</td></tr>`;
+        }
+    }
+
+    function prepareAdd() {
+        isEditMode = false;
+        document.getElementById('modalTitle').innerText = "Add New Staff Member";
+        document.getElementById('e_id').disabled = false;
+        clearForm();
+    }
+
+    function prepareEdit(id, fn, ln, des, iata, sal) {
+        isEditMode = true;
+        document.getElementById('modalTitle').innerText = "Update Staff Record: " + id;
+        document.getElementById('e_id').value = id;
+        document.getElementById('e_id').disabled = true;
+        document.getElementById('e_fn').value = fn;
+        document.getElementById('e_ln').value = ln;
+        document.getElementById('e_des').value = des;
+        document.getElementById('e_iata').value = iata;
+        document.getElementById('e_sal').value = sal;
+        new bootstrap.Modal(document.getElementById('empModal')).show();
+    }
+
+    async function saveEmployee() {
+        const payload = {
+            table: 'employee',
+            data: {
+                emp_id: document.getElementById('e_id').value,
+                fname: document.getElementById('e_fn').value,
+                lname: document.getElementById('e_ln').value,
+                designation: document.getElementById('e_des').value,
+                iata_code: document.getElementById('e_iata').value,
+                salary: document.getElementById('e_sal').value
+            }
+        };
+
+        const url = isEditMode ? '/api/update' : '/api/add';
+        const method = isEditMode ? 'PUT' : 'POST';
+        
+    
+        if (isEditMode) {
+            // For UPDATING: The ID goes in idValue
+            payload.idColumn = 'emp_id';
+            payload.idValue = document.getElementById('e_id').value;
+        } else {
+            // For ADDING: The ID MUST be part of the data object
+            payload.data.emp_id = document.getElementById('e_id').value;
+        }
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            location.reload();
+        } else {
+            const errText = await res.text();
+            alert("Oracle Error: " + errText); // This will show the real ORA-XXXXX error
+        }
+    }
+
+    async function deleteEntry(id) {
+        if (confirm(`Remove Employee ID #${id} from the database?`)) {
+            await fetch(`/api/delete/employee/emp_id/${id}`, { method: 'DELETE' });
+            loadEmployees();
+        }
+    }
+
+    function clearForm() {
+        document.getElementById('e_id').value = '';
+        document.getElementById('e_fn').value = '';
+        document.getElementById('e_ln').value = '';
+        document.getElementById('e_des').value = '';
+        document.getElementById('e_iata').value = '';
+        document.getElementById('e_sal').value = '';
+    }
+
+    window.onload = loadEmployees;
+</script>
+</body>
+</html>

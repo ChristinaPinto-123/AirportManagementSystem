@@ -1,0 +1,242 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AERO TRACKER | FLIGHTS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* 1. FONTS */
+        body { 
+            background-color: #617891; 
+            font-family: Arial, sans-serif; 
+        }
+
+        /* Impact for Brand and Page Titles */
+        h2, .sidebar-header, .modal-title {
+            font-family: 'Impact', 'Charcoal', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* GEORGIA for Table Headings */
+        .table thead th {
+            font-family: 'Georgia', serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background-color: #1d2b46 !important;
+            color: white !important;
+        }
+
+        /* Courier New for Database Data */
+        .table tbody td, .form-control, .badge {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+        }
+
+        /* 2. LAYOUT */
+        .sidebar { 
+            height: 100vh; width: 250px; position: fixed; 
+            background: #1d2b46; padding-top: 20px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-header {
+            color: #ffffff; font-size: 1.8rem; text-align: center;
+            padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar a { 
+            padding: 15px; text-decoration: none; color: #cbd5e0; 
+            display: block; transition: 0.3s; font-family: 'Impact', sans-serif;
+        }
+
+        .sidebar a:hover { background: #34495e; color: white; padding-left: 25px; }
+        .sidebar .active { background: #648ac3; color: white; }
+
+        .content { margin-left: 260px; padding: 40px; }
+        .card { border: none; border-radius: 15px; background: white; overflow: hidden; }
+
+        /* Status Badge Styling */
+        .status-pill {
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar shadow">
+    <div class="sidebar-header">🌐 AERO TRACKER</div>
+    <a href="index.html">PASSENGERS</a>
+    <a href="flights.html" class="active">FLIGHTS</a>
+    <a href="employee.html">EMPLOYEES</a>
+    <a href="tickets.html">TICKETS</a>
+</div>
+
+<div class="content">
+    <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+        <h2 style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">Flight Schedule</h2>
+        <div>
+            <button class="btn btn-dark" onclick="loadFlights()">Refresh Board</button>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#flightModal" onclick="prepareAdd()">+ Add Flight</button>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Flight No</th>
+                        <th>Origin</th>
+                        <th>Destination</th>
+                        <th>Status</th>
+                        <th>Gate</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fTable">
+                    <tr><td colspan="6" class="text-center py-4 text-dark">Loading Flight Data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="flightModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Flight Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="fw-bold">Flight Number</label><input type="text" id="f_no" class="form-control"></div>
+                <div class="mb-3"><label class="fw-bold">Arrival From</label><input type="text" id="f_from" class="form-control"></div>
+                <div class="mb-3"><label class="fw-bold">Departure To</label><input type="text" id="f_to" class="form-control"></div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold">Status</label>
+                        <select id="f_status" class="form-select">
+                            <option value="On Time">On Time</option>
+                            <option value="Delayed">Delayed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-6 mb-3"><label class="fw-bold">Gate</label><input type="text" id="f_gate" class="form-control"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary w-100" onclick="saveFlight()">Save Flight</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let isEditMode = false;
+
+    // 1. LOAD DATA
+    async function loadFlights() {
+        const tbody = document.getElementById('fTable');
+        try {
+            const res = await fetch('/api/flights');
+            const data = await res.json();
+            tbody.innerHTML = '';
+            
+            data.forEach(f => {
+                const statusColor = f.STATUS === 'Delayed' ? 'bg-danger' : (f.STATUS === 'Cancelled' ? 'bg-secondary' : 'bg-success');
+                tbody.innerHTML += `
+                    <tr class="align-middle">
+                        <td class="fw-bold">${f.FLIGHT_NO}</td>
+                        <td>${f.ARRIVALING_FROM}</td>
+                        <td>${f.DEPARTING_TO}</td>
+                        <td><span class="badge ${statusColor} status-pill">${f.STATUS}</span></td>
+                        <td>${f.GATE_NO}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="prepareEdit('${f.FLIGHT_NO}', '${f.ARRIVALING_FROM}', '${f.DEPARTING_TO}', '${f.STATUS}', '${f.GATE_NO}')">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteEntry('${f.FLIGHT_NO}')">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Fetch Error</td></tr>`;
+        }
+    }
+
+    function prepareAdd() {
+        isEditMode = false;
+        document.getElementById('modalTitle').innerText = "Add New Flight";
+        document.getElementById('f_no').disabled = false;
+        clearForm();
+    }
+
+    function prepareEdit(id, from, to, status, gate) {
+        isEditMode = true;
+        document.getElementById('modalTitle').innerText = "Update Flight " + id;
+        document.getElementById('f_no').value = id;
+        document.getElementById('f_no').disabled = true;
+        document.getElementById('f_from').value = from;
+        document.getElementById('f_to').value = to;
+        document.getElementById('f_status').value = status;
+        document.getElementById('f_gate').value = gate;
+        new bootstrap.Modal(document.getElementById('flightModal')).show();
+    }
+
+    async function saveFlight() {
+        const payload = {
+            table: 'flights',
+            data: {
+                arrivaling_from: document.getElementById('f_from').value,
+                departing_to: document.getElementById('f_to').value,
+                status: document.getElementById('f_status').value,
+                gate_no: document.getElementById('f_gate').value
+            }
+        };
+
+        const url = isEditMode ? '/api/update' : '/api/add';
+        const method = isEditMode ? 'PUT' : 'POST';
+        
+        if (isEditMode) {
+            payload.idColumn = 'flight_no';
+            payload.idValue = document.getElementById('f_no').value;
+        } else {
+            payload.data.flight_no = document.getElementById('f_no').value;
+        }
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            location.reload();
+        } else {
+            alert("Oracle Error: " + errText);
+        }
+    }
+
+    async function deleteEntry(id) {
+        if (confirm(`Cancel Flight ${id}?`)) {
+            await fetch(`/api/delete/flights/flight_no/${id}`, { method: 'DELETE' });
+            loadFlights();
+        }
+    }
+
+    function clearForm() {
+        document.getElementById('f_no').value = '';
+        document.getElementById('f_from').value = '';
+        document.getElementById('f_to').value = '';
+        document.getElementById('f_status').value = 'On Time';
+        document.getElementById('f_gate').value = '';
+    }
+
+    window.onload = loadFlights;
+</script>
+</body>
+</html>
