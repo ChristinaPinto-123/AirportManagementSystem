@@ -5,7 +5,7 @@ const app = express();
 
 const dbConfig = {
     user: "system",
-    password: "12345",
+    password: "Enter_Your_Paassword",
     connectString: "localhost:1521/xepdb1"
 };
 
