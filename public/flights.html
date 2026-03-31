@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,6 +96,12 @@
             <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#flightModal" onclick="prepareAdd()">+ Add Flight</button>
         </div>
     </div>
+
+    <div class="mb-3">
+    <button class="btn btn-warning shadow-sm fw-bold" onclick="runReport()">Run Night Flight Report</button>
+    </div>
+    <div id="reportBox" class="alert alert-info d-none shadow-sm border-start border-4 border-info">
+    </div>
     
     <div class="card shadow-sm">
     <div class="card-body p-0">
@@ -105,23 +110,23 @@
                 <tr>
                     <th>Flight No</th>
                     <th>Origin</th>
-                    <th>Destination</th>
-                    <th>Status</th>
+                    <th>Dep. Time</th> <th>Destination</th>
+                    <th>Arr. Time</th> <th>Status</th>
                     <th>Gate</th>
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="fTable">
-                <tr><td colspan="6" class="text-center py-4 text-dark">Loading Flight Data...</td></tr>
-            </tbody>
-            
-            <tfoot id="fFooter">
-                <tr style="background: #1a2634; color: #ffffff;">
-                    <td colspan="6" class="text-center py-3" style="font-weight: 500; letter-spacing: 0.5px;">
-                        <span id="summaryText">Initializing Summary...</span>
-                    </td>
-                </tr>
-            </tfoot>
+        <tbody id="fTable">
+            <tr><td colspan="8" class="text-center py-4 text-dark italic">Loading Flight Data...</td></tr>
+        </tbody>
+
+        <tfoot id="fFooter">
+            <tr style="background: #1a2634; color: #ffffff;">
+                <td colspan="8" class="text-center py-3" style="font-weight: 500; letter-spacing: 0.5px;">
+                    <span id="summaryText">Initializing Summary...</span>
+                </td>
+            </tr>
+        </tfoot>
         </table>
     </div>
 </div>
@@ -134,19 +139,46 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3"><label class="fw-bold">Flight Number</label><input type="text" id="f_no" class="form-control"></div>
-                <div class="mb-3"><label class="fw-bold">Arrival From</label><input type="text" id="f_from" class="form-control"></div>
-                <div class="mb-3"><label class="fw-bold">Departure To</label><input type="text" id="f_to" class="form-control"></div>
+                <div class="mb-3">
+                    <label class="fw-bold">Flight Number</label>
+                    <input type="text" id="f_no" class="form-control" placeholder="e.g. AI101">
+                </div>
+
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold">Arrival From (Origin)</label>
+                        <input type="text" id="f_from" class="form-control">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold">Departure To (Destination)</label>
+                        <input type="text" id="f_to" class="form-control">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold text-primary">Departure Time</label>
+                        <input type="time" id="f_dep_time" class="form-control">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold text-success">Arrival Time</label>
+                        <input type="time" id="f_arr_time" class="form-control">
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="fw-bold">Status</label>
                         <select id="f_status" class="form-select">
-                            <option value="On Time">On Time</option>
+                            <option value="Scheduled">Scheduled</option> 
                             <option value="Delayed">Delayed</option>
                             <option value="Cancelled">Cancelled</option>
                         </select>
                     </div>
-                    <div class="col-6 mb-3"><label class="fw-bold">Gate</label><input type="text" id="f_gate" class="form-control"></div>
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold">Gate</label>
+                        <input type="text" id="f_gate" class="form-control">
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -160,10 +192,10 @@
 <script>
     let isEditMode = false;
 
-    // 1. LOAD DATA
+    
     async function loadFlights() {
-    const tbody = document.getElementById('fTable');
-    const summarySpan = document.getElementById('summaryText'); 
+        const tbody = document.getElementById('fTable');
+        const summarySpan = document.getElementById('summaryText'); 
         try {
             const res = await fetch('/api/flights');
             const data = await res.json();
@@ -175,35 +207,43 @@
 
             flights.forEach(f => {
                 const statusColor = f.STATUS === 'Delayed' ? 'bg-danger' : 
-                                (f.STATUS === 'Cancelled' ? 'bg-secondary' : 'bg-success');
-                
+                                    (f.STATUS === 'Cancelled' ? 'bg-secondary' : 'bg-success');
+
+                const displayDep = f.DEPARTURE_TIME || '--:--';
+                const displayArr = f.ARRIVAL_TIME || '--:--';
+
                 tbody.innerHTML += `
                     <tr class="align-middle">
                         <td class="fw-bold">${f.FLIGHT_NO}</td>
                         <td>${f.ARRIVALING_FROM}</td>
+                        <td class="text-primary fw-bold">${displayDep}</td> 
                         <td>${f.DEPARTING_TO}</td>
+                        <td class="text-success fw-bold">${displayArr}</td> 
                         <td><span class="badge ${statusColor} status-pill">${f.STATUS}</span></td>
                         <td>${f.GATE_NO}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="prepareEdit('${f.FLIGHT_NO}', '${f.ARRIVALING_FROM}', '${f.DEPARTING_TO}', '${f.STATUS}', '${f.GATE_NO}')">Edit</button>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                onclick="prepareEdit('${f.FLIGHT_NO}', '${f.ARRIVALING_FROM}', '${f.DEPARTING_TO}', '${f.STATUS}', '${f.GATE_NO}', '${displayDep}', '${displayArr}')">
+                                Edit
+                            </button>
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteEntry('${f.FLIGHT_NO}')">Delete</button>
                         </td>
                     </tr>`;
             });
-
-            
             if (summarySpan) {
                 summarySpan.innerText = summary;
             }
 
-        } catch (err) {
+        } 
+        catch (err) {
             console.error("Load Error:", err);
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Fetch Error</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Fetch Error</td></tr>`;
             if (summarySpan) {
                 summarySpan.innerText = "Error loading summary";
             }
         }
     }
+
     function prepareAdd() {
         isEditMode = false;
         document.getElementById('modalTitle').innerText = "Add New Flight";
@@ -211,26 +251,39 @@
         clearForm();
     }
 
-    function prepareEdit(id, from, to, status, gate) {
-        isEditMode = true;
-        document.getElementById('modalTitle').innerText = "Update Flight " + id;
-        document.getElementById('f_no').value = id;
-        document.getElementById('f_no').disabled = true;
-        document.getElementById('f_from').value = from;
-        document.getElementById('f_to').value = to;
-        document.getElementById('f_status').value = status;
-        document.getElementById('f_gate').value = gate;
-        new bootstrap.Modal(document.getElementById('flightModal')).show();
-    }
+    function prepareEdit(no, from, to, status, gate, depTime, arrTime) {
+    isEditMode = true;
+    document.getElementById('modalTitle').innerText = "Edit Flight";
+    
+    document.getElementById('f_no').value = no;
+    document.getElementById('f_no').readOnly = true; 
+    document.getElementById('f_from').value = from;
+    document.getElementById('f_to').value = to;
+    
+    document.getElementById('f_status').value = status; 
+    
+    document.getElementById('f_gate').value = gate;
+    document.getElementById('f_dep_time').value = depTime || "";
+    document.getElementById('f_arr_time').value = arrTime || "";
+
+    const modal = new bootstrap.Modal(document.getElementById('flightModal'));
+    modal.show();
+}
 
     async function saveFlight() {
+        const depTime = document.getElementById('f_dep_time').value; 
+        const arrTime = document.getElementById('f_arr_time').value;
+
         const payload = {
             table: 'flights',
             data: {
                 arrivaling_from: document.getElementById('f_from').value,
                 departing_to: document.getElementById('f_to').value,
                 status: document.getElementById('f_status').value,
-                gate_no: document.getElementById('f_gate').value
+                gate_no: document.getElementById('f_gate').value,
+                // SENDING RAW TIME (e.g. "10:55")
+                departure_time: depTime, 
+                arrival_time: arrTime
             }
         };
 
@@ -240,6 +293,7 @@
         if (isEditMode) {
             payload.idColumn = 'flight_no';
             payload.idValue = document.getElementById('f_no').value;
+            payload.data.flight_no = document.getElementById('f_no').value;
         } else {
             payload.data.flight_no = document.getElementById('f_no').value;
         }
@@ -257,19 +311,41 @@
             alert("Oracle Error: " + errText); 
         }
     }
-
     async function deleteEntry(id) {
-        if (confirm(`Cancel Flight ${id}?`)) {
-            await fetch(`/api/delete/flights/flight_no/${id}`, { method: 'DELETE' });
-            loadFlights();
+            if (confirm(`Cancel Flight ${id}?`)) {
+                await fetch(`/api/delete/flights/flight_no/${id}`, { method: 'DELETE' });
+                loadFlights();
+            }
         }
+
+        async function runReport() {
+            const box = document.getElementById('reportBox');
+            try {
+                const res = await fetch('/api/report');
+                const data = await res.json();
+                
+                if (data.length === 0) {
+                    box.innerHTML = "<strong>Report:</strong> No late-night flights found in the cursor.";
+                } else {
+                    // Map the rows (Oracle returns arrays for cursors)
+                    const list = data.map(r => `• Flight <strong>${r[0]}</strong> to <strong>${r[1]}</strong> arrives at <strong>${r[2]}</strong>`).join('<br>');
+                    box.innerHTML = `<strong>Oracle Cursor Results:</strong><br>${list}`;
+                }
+                box.classList.remove('d-none'); // Show the blue box
+            } catch (err) {
+                box.innerHTML = "<strong>Error:</strong> Cursor fetch failed.";
+                box.classList.remove('d-none');
+            }
     }
 
     function clearForm() {
         document.getElementById('f_no').value = '';
+        document.getElementById('f_no').readOnly = false; 
         document.getElementById('f_from').value = '';
         document.getElementById('f_to').value = '';
-        document.getElementById('f_status').value = 'On Time';
+        document.getElementById('f_dep_time').value = ''; 
+        document.getElementById('f_arr_time').value = ''; 
+        document.getElementById('f_status').value = 'Scheduled';
         document.getElementById('f_gate').value = '';
     }
 

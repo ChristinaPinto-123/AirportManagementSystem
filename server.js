@@ -13,7 +13,6 @@ app.use(express.static('public'));
 app.use(express.json());
 
 // --- DATABASE ROUTES ---
-
 app.get('/api/passengers', async (req, res) => {
     let conn;
     try {
@@ -29,24 +28,26 @@ app.get('/api/flights', async (req, res) => {
     try {
         connection = await oracledb.getConnection(dbConfig);
 
-    
         const flightData = await connection.execute(
-            `SELECT flight_no, arrivaling_from, departing_to, status, gate_no FROM flights`,
+            `SELECT flight_no, arrivaling_from, departure_time, departing_to, arrival_time, status, gate_no FROM flights`,
             [], { outFormat: oracledb.OUT_FORMAT_OBJECT }
         );
 
-    
         const summaryData = await connection.execute(
-            `SELECT get_flight_summary() AS summary FROM dual`
+            `SELECT get_flight_summary() AS summary FROM dual`,
+            [], { outFormat: oracledb.OUT_FORMAT_OBJECT }
         );
 
-        
+        const rawRow = summaryData.rows[0];
+        const summaryText = rawRow.SUMMARY || rawRow.summary || Object.values(rawRow)[0];
+
         res.json({
             flights: flightData.rows,
-            summary: summaryData.rows[0][0] 
+            summary: summaryText
         });
 
     } catch (err) {
+        console.error(err); 
         res.status(500).send(err.message);
     } finally {
         if (connection) await connection.close();
@@ -115,13 +116,12 @@ app.put('/api/update', async (req, res) => {
     try {
         conn = await oracledb.getConnection(dbConfig);
         
-        // Build the SET string: col1 = :1, col2 = :2, etc.
         const setString = Object.keys(data)
             .map((key, i) => `${key} = :${i + 1}`)
             .join(', ');
         
         const values = Object.values(data);
-        values.push(idValue); // Add the ID for the WHERE clause at the end
+        values.push(idValue); 
 
         const sql = `UPDATE ${table} SET ${setString} WHERE ${idColumn} = :${values.length}`;
         
@@ -135,6 +135,36 @@ app.put('/api/update', async (req, res) => {
     }
 });
 
+//---LATE FLIGHT REPORTS---
+app.get('/api/report', async (req, res) => {
+    let conn;
+    try {
+        conn = await oracledb.getConnection(dbConfig);
+        const result = await conn.execute(
+        `BEGIN get_late_night_report(:cursor); END;`, 
+        { cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT } }
+);
+
+        const resultSet = result.outBinds.cursor;
+        const rows = [];
+        let row;
+
+        while ((row = await resultSet.getRow())) {
+            rows.push(row);
+        }
+
+    
+        await resultSet.close();
+
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send(err.message);
+    } finally {
+        if (conn) await conn.close();
+    }
+});
+
 app.listen(3000, () => {
-    console.log("🚀 SkyGate Web running at http://localhost:3000");
+    console.log("Aero Tracker running at http://localhost:3000");
 });
