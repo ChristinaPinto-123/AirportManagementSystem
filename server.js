@@ -25,13 +25,32 @@ app.get('/api/passengers', async (req, res) => {
 });
 
 app.get('/api/flights', async (req, res) => {
-    let conn;
+    let connection;
     try {
-        conn = await oracledb.getConnection(dbConfig);
-        const result = await conn.execute(`SELECT flight_no, status, departing_to, arrivaling_from, gate_no FROM flights`, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
-        res.json(result.rows);
-    } catch (err) { res.status(500).send(err.message); }
-    finally { if (conn) await conn.close(); }
+        connection = await oracledb.getConnection(dbConfig);
+
+    
+        const flightData = await connection.execute(
+            `SELECT flight_no, arrivaling_from, departing_to, status, gate_no FROM flights`,
+            [], { outFormat: oracledb.OUT_FORMAT_OBJECT }
+        );
+
+    
+        const summaryData = await connection.execute(
+            `SELECT get_flight_summary() AS summary FROM dual`
+        );
+
+        
+        res.json({
+            flights: flightData.rows,
+            summary: summaryData.rows[0][0] 
+        });
+
+    } catch (err) {
+        res.status(500).send(err.message);
+    } finally {
+        if (connection) await connection.close();
+    }
 });
 
 app.get('/api/employees', async (req, res) => {

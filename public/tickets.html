@@ -222,8 +222,11 @@
 
         if (res.ok) {
             location.reload();
-        } else {
-            alert("Oracle Database rejected the ticket update.");
+        } 
+        
+        else {
+            const errText = await res.text();
+            alert("Oracle Error: " + errText); 
         }
     }
 

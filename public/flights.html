@@ -64,6 +64,19 @@
             border-radius: 50px;
             font-size: 0.8rem;
         }
+
+            
+        #summaryText {
+            color: #ba9709;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        #fFooter tr:hover {
+            background-color: #1a2634 !important;
+        }
     </style>
 </head>
 <body>
@@ -86,23 +99,30 @@
     </div>
     
     <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Flight No</th>
-                        <th>Origin</th>
-                        <th>Destination</th>
-                        <th>Status</th>
-                        <th>Gate</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="fTable">
-                    <tr><td colspan="6" class="text-center py-4 text-dark">Loading Flight Data...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Flight No</th>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Status</th>
+                    <th>Gate</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="fTable">
+                <tr><td colspan="6" class="text-center py-4 text-dark">Loading Flight Data...</td></tr>
+            </tbody>
+            
+            <tfoot id="fFooter">
+                <tr style="background: #1a2634; color: #ffffff;">
+                    <td colspan="6" class="text-center py-3" style="font-weight: 500; letter-spacing: 0.5px;">
+                        <span id="summaryText">Initializing Summary...</span>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
 </div>
 
@@ -142,14 +162,21 @@
 
     // 1. LOAD DATA
     async function loadFlights() {
-        const tbody = document.getElementById('fTable');
+    const tbody = document.getElementById('fTable');
+    const summarySpan = document.getElementById('summaryText'); 
         try {
             const res = await fetch('/api/flights');
             const data = await res.json();
+            
             tbody.innerHTML = '';
             
-            data.forEach(f => {
-                const statusColor = f.STATUS === 'Delayed' ? 'bg-danger' : (f.STATUS === 'Cancelled' ? 'bg-secondary' : 'bg-success');
+            const flights = Array.isArray(data) ? data : (data.flights || []);
+            const summary = data.summary || "Summary data unavailable";
+
+            flights.forEach(f => {
+                const statusColor = f.STATUS === 'Delayed' ? 'bg-danger' : 
+                                (f.STATUS === 'Cancelled' ? 'bg-secondary' : 'bg-success');
+                
                 tbody.innerHTML += `
                     <tr class="align-middle">
                         <td class="fw-bold">${f.FLIGHT_NO}</td>
@@ -163,11 +190,20 @@
                         </td>
                     </tr>`;
             });
+
+            
+            if (summarySpan) {
+                summarySpan.innerText = summary;
+            }
+
         } catch (err) {
+            console.error("Load Error:", err);
             tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Fetch Error</td></tr>`;
+            if (summarySpan) {
+                summarySpan.innerText = "Error loading summary";
+            }
         }
     }
-
     function prepareAdd() {
         isEditMode = false;
         document.getElementById('modalTitle').innerText = "Add New Flight";
@@ -217,7 +253,8 @@
         if (res.ok) {
             location.reload();
         } else {
-            alert("Oracle Error: " + errText);
+            const errText = await res.text();
+            alert("Oracle Error: " + errText); 
         }
     }
 
